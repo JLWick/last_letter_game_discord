@@ -30,8 +30,12 @@ async def on_message(message):
             except OSError:
                 file.seek(0)
             last_line = file.readline().decode()
-            if last_line[-2:-1] == message.content.lower()[0]:
+
+            if last_line[-1] == message.content.lower()[0]:
                 last_letter_matches = True
+            else:
+                log = "last letter was " + last_line[-1] + " you dingus"
+                print(log)
 
         if not last_letter_matches:
             await message.add_reaction(consts.WRONG_EMOJI)
@@ -44,7 +48,7 @@ async def on_message(message):
             if not seen:
                 # add message to list
                 with open("src\\history.txt", "a") as file:
-                    file.write(message.content.lower() + "\n")
+                    file.write("\n" + message.content.lower())
             else:
                 await message.add_reaction(consts.RECYCLE_EMOJI)
 
