@@ -1,2 +1,3 @@
 RECYCLE_EMOJI = "♻️"
-CHANNEL_NAME = "file-transfers"
+CHANNEL_NAME = "last-letter-game"
+WRONG_EMOJI = "❌"

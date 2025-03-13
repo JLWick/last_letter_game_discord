@@ -2,6 +2,7 @@
 # and if anyone repeats a word, it reacts with a recycle emoji
 import discord
 import consts
+import os
 
 intents = discord.Intents.default() # enable most permissions
 intents.message_content = True # allow bot to read messages
@@ -21,17 +22,31 @@ async def on_message(message):
         # look through each message and compare it
         seen = False
         last_letter_matches = False
-        with open("src\\history.txt") as previous_words:
-            for item in previous_words:
-                if item[:-1] == message.content:
-                    seen = True
+        with open("src\\history.txt", "+br") as file:
+            try:
+                file.seek(-2, os.SEEK_END)
+                while file.read(1) != b"\n":
+                    file.seek(-2, os.SEEK_CUR)
+            except OSError:
+                file.seek(0)
+            last_line = file.readline().decode()
+            if last_line[-2:-1] == message.content.lower()[0]:
+                last_letter_matches = True
 
-        if seen:
-            await message.add_reaction(consts.RECYCLE_EMOJI)
+        if not last_letter_matches:
+            await message.add_reaction(consts.WRONG_EMOJI)
         else:
-            # add message to list
-            with open("src\\history.txt", "a") as file:
-                file.write(message.content + "\n")
+            with open("src\\history.txt") as previous_words:
+                for item in previous_words:
+                    if item[:-1] == message.content.lower():
+                        seen = True
+
+            if not seen:
+                # add message to list
+                with open("src\\history.txt", "a") as file:
+                    file.write(message.content.lower() + "\n")
+            else:
+                await message.add_reaction(consts.RECYCLE_EMOJI)
 
 
 token_file = open("src\\token.txt")
