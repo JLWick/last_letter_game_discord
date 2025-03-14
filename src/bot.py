@@ -29,9 +29,24 @@ async def on_message(message):
                     file.seek(-2, os.SEEK_CUR)
             except OSError:
                 file.seek(0)
-            last_line = file.readline().decode()
+            last_line = file.readline().decode().lower()
 
-            if last_line[-1] == message.content.lower()[0]:
+            for i in range(1, len(last_line)+1):
+                if last_line[-i].isalpha():
+                    last_letter = last_line[-i]
+                    break
+
+            line_to_test = message.content.lower()
+
+            first_letter = ""
+            for i in range(len(line_to_test)):
+                if line_to_test[i].isalpha():
+                    first_letter = line_to_test[i]
+                    break
+
+
+
+            if last_letter == first_letter:
                 last_letter_matches = True
             else:
                 log = "last letter was " + last_line[-1] + " you dingus"
@@ -42,13 +57,13 @@ async def on_message(message):
         else:
             with open("src\\history.txt") as previous_words:
                 for item in previous_words:
-                    if item[:-1] == message.content.lower():
+                    if item[:-1] == line_to_test:
                         seen = True
 
             if not seen:
                 # add message to list
                 with open("src\\history.txt", "a") as file:
-                    file.write("\n" + message.content.lower())
+                    file.write("\n" + line_to_test)
             else:
                 await message.add_reaction(consts.RECYCLE_EMOJI)
 
