@@ -3,11 +3,39 @@
 import discord
 import consts
 import os
+import re
 
 intents = discord.Intents.default() # enable most permissions
 intents.message_content = True # allow bot to read messages
 
 client = discord.Client(intents=intents)
+
+
+def emote_removal(bad_text: str) -> str:
+    """removes emote-like expressions from a string"""
+    pattern = r'^[^:]+:[a-zA-Z_]+:[^:]+$'
+    while bool(re.match(pattern, bad_text)):
+        """bad string, has an emote in it, removing it"""
+        # find a :
+        first_colon = bad_text.find(":")
+        
+        # find a second colon, making sure its a valid emote along the way
+        for j in range(first_colon+1, len(bad_text)):
+            if not bad_text[j].isalpha or bad_text[j] != "_":
+                # colon was not emote start, remove
+                bad_text = bad_text[:first_colon] + bad_text[first_colon + 1:]
+            elif bad_text[j] == ":":
+                #found the end of our emote
+                bad_text = bad_text[:first_colon] + bad_text[j + 1:]
+    return bad_text
+                
+
+            
+
+
+
+
+
 
 @client.event
 async def on_ready():
@@ -18,7 +46,7 @@ async def on_message(message):
     if message.author == client.user: #make sure the bot didn't send it
         return
 
-    if message.channel.name == consts.TEST_CHANNEL_NAME:
+    if message.channel.name == consts.CHANNEL_NAME:
         # look through each message and compare it
         seen = False
         last_letter_matches = False
@@ -29,7 +57,8 @@ async def on_message(message):
                     file.seek(-2, os.SEEK_CUR)
             except OSError:
                 file.seek(0)
-            last_line = file.readline().decode().lower()
+            last_line = emote_removal(file.readline().decode().lower())
+
 
             for i in range(1, len(last_line)+1):
                 if last_line[-i].isalpha():
@@ -39,6 +68,7 @@ async def on_message(message):
             line_to_test = message.content.lower()
 
             first_letter = ""
+            
             for i in range(len(line_to_test)):
                 if line_to_test[i].isalpha():
                     first_letter = line_to_test[i]
