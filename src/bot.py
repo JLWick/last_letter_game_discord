@@ -18,7 +18,7 @@ async def on_message(message):
     if message.author == client.user: #make sure the bot didn't send it
         return
 
-    if message.channel.name == consts.CHANNEL_NAME:
+    if message.channel.name == consts.TEST_CHANNEL_NAME:
         # look through each message and compare it
         seen = False
         last_letter_matches = False
@@ -44,16 +44,13 @@ async def on_message(message):
                     first_letter = line_to_test[i]
                     break
 
-
-
             if last_letter == first_letter:
                 last_letter_matches = True
-            else:
-                log = "last letter was " + last_line[-1] + " you dingus"
-                print(log)
 
         if not last_letter_matches:
             await message.add_reaction(consts.WRONG_EMOJI)
+            log = "last letter was " + last_line[-1] + " you dingus"
+            print(log)
         else:
             with open("src\\history.txt") as previous_words:
                 for item in previous_words:
@@ -63,7 +60,11 @@ async def on_message(message):
             if not seen:
                 # add message to list
                 with open("src\\history.txt", "a") as file:
-                    file.write("\n" + line_to_test)
+                    line_to_save = ""
+                    for i in range(len(line_to_test)):
+                        if line_to_test[i].isalpha():
+                            line_to_save += line_to_test[i]
+                    file.write("\n" + line_to_save)
             else:
                 await message.add_reaction(consts.RECYCLE_EMOJI)
 
