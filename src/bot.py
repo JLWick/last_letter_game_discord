@@ -13,25 +13,70 @@ client = discord.Client(intents=intents)
 
 def emote_removal(bad_text: str) -> str:
     """removes emote-like expressions from a string"""
-    pattern = r'^[^:]+:[a-zA-Z_]+:[^:]+$'
+    pattern = r"^.*(:[a-zA-Z_~0-9]+:).*$"
     while bool(re.match(pattern, bad_text)):
         """bad string, has an emote in it, removing it"""
         # find a :
         first_colon = bad_text.find(":")
+
         
         # find a second colon, making sure its a valid emote along the way
         for j in range(first_colon+1, len(bad_text)):
-            if not bad_text[j].isalpha or bad_text[j] != "_":
-                # colon was not emote start, remove
-                bad_text = bad_text[:first_colon] + bad_text[first_colon + 1:]
-            elif bad_text[j] == ":":
+            
+            if bad_text[j] == ":":
                 #found the end of our emote
                 bad_text = bad_text[:first_colon] + bad_text[j + 1:]
+                break
+            elif not bad_text[j].isalpha() and bad_text[j] != "_":
+                # colon was not emote start, remove
+                bad_text = bad_text[:first_colon] + bad_text[first_colon + 1:]
+                break
+
+    # <emote:123098123098> style
+    pattern = r"^.*(<.+>).*$"
+    while bool(re.match(pattern, bad_text)):
+        """bad string, has an emote in it, removing it"""
+        # find a <
+        emote_start = bad_text.find("<")
+
+        #find a > after that
+        emote_end = bad_text.find(">", emote_start)
+
+        bad_text = bad_text[:emote_start] + bad_text[emote_end + 1:]
+
+
     return bad_text
-                
 
-            
 
+
+def is_last_letter_matching(last_line: str, line_to_test: str) -> bool:
+    last_letter_matches = False
+    for i in range(1, len(last_line)+1):
+        if last_line[-i].isalpha():
+            last_letter = last_line[-i]
+            break
+
+    first_letter = ""
+
+    for i in range(len(line_to_test)):
+        if line_to_test[i].isalpha():
+            first_letter = line_to_test[i]
+            break
+
+    if last_letter == first_letter:
+        last_letter_matches = True
+
+    return last_letter_matches
+
+def is_seen_before(line_to_test: str) -> bool:
+    seen = False
+
+    with open("src\\history.txt") as previous_words:
+                    for item in previous_words:
+                        if item[:-1] == line_to_test:
+                            seen = True
+
+    return seen
 
 
 
@@ -47,9 +92,7 @@ async def on_message(message):
         return
 
     if message.channel.name == consts.CHANNEL_NAME:
-        # look through each message and compare it
-        seen = False
-        last_letter_matches = False
+
         with open("src\\history.txt", "+br") as file:
             try:
                 file.seek(-2, os.SEEK_END)
@@ -57,35 +100,19 @@ async def on_message(message):
                     file.seek(-2, os.SEEK_CUR)
             except OSError:
                 file.seek(0)
-            last_line = emote_removal(file.readline().decode().lower())
+            last_line = file.readline().decode()
 
+        line_to_test = emote_removal(message.content.lower())
+        print(line_to_test)
 
-            for i in range(1, len(last_line)+1):
-                if last_line[-i].isalpha():
-                    last_letter = last_line[-i]
-                    break
-
-            line_to_test = message.content.lower()
-
-            first_letter = ""
-            
-            for i in range(len(line_to_test)):
-                if line_to_test[i].isalpha():
-                    first_letter = line_to_test[i]
-                    break
-
-            if last_letter == first_letter:
-                last_letter_matches = True
+        last_letter_matches = is_last_letter_matching(last_line, line_to_test)
 
         if not last_letter_matches:
             await message.add_reaction(consts.WRONG_EMOJI)
             log = "last letter was " + last_line[-1] + " you dingus"
             print(log)
         else:
-            with open("src\\history.txt") as previous_words:
-                for item in previous_words:
-                    if item[:-1] == line_to_test:
-                        seen = True
+            seen = is_seen_before(line_to_test)
 
             if not seen:
                 # add message to list
